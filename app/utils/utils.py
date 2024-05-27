@@ -23,6 +23,7 @@ def authenticate_user(email:str, password:str, db)->bool:
         .filter(User.email == email)\
         .first()
     
+    
     if not user:
         return False
     

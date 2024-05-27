@@ -19,11 +19,18 @@ router = APIRouter(
 
 @router.post("/register")
 async def register_user(user:CreateUser, db: Session = Depends(get_db)):
-    newUser = User()
+    newUser = User(
+        user.email,
+        user.username,
+        user.firstname, user.lastname,
+        user.phone_number,
+        utils.get_hashed_password(user.password)
+    )
     newUser.email = user.email
     newUser.firstname = user.firstname
     newUser.lastname = user.lastname
     newUser.username = user.username
+    newUser.phone_number = user.phone_number
     newUser.password = utils.get_hashed_password(user.password)
     newUser.is_banned = False
 
@@ -66,12 +73,15 @@ async def update_user_profile(upUser:UpdateUserProfile, user:dict = Depends(util
         current_user.lastname = upUser.lastname
     if upUser.username:
         current_user.username = upUser.username
+    if upUser.phone_number:
+        current_user.phone_number = upUser.phone_number
 
     db.commit()
     db.refresh(current_user)
     return {
         "username": current_user.username,
         "firstname": current_user.firstname,
-        "lastname": current_user.lastname
+        "lastname": current_user.lastname,
+        "phone_number": current_user.phone_number
     }
 

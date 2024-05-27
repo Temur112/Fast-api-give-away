@@ -1,73 +1,23 @@
 from utils import utils
-import unittest
-from fastapi.testclient import TestClient
-from sqlalchemy import create_engine
-from sqlalchemy.orm  import sessionmaker
-from main import app
-from db.database import Base, get_db
 from models import user
-
-
-TEST_DB_URL = "sqlite:///./test.db"
-
-
-engine = create_engine(
-    TEST_DB_URL, connect_args={"check_same_thread": False}
-)
-
-TestSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
-
-def override_get_db():
-    try:
-        db = TestSessionLocal()
-        yield db
-    finally:
-        db.close()
-
-app.dependency_overrides[get_db] = override_get_db
-
-
-Base.metadata.create_all(bind = engine)
-
-client = TestClient(app)
+from base import BaseTest, TestSessionLocal
+import unittest
 
 
 
-class TestAuth(unittest.TestCase):
+class TestAuth(BaseTest):
 
     @classmethod
     def setUpClass(cls):
-        Base.metadata.create_all(bind=engine)
-
-        cls.engine = create_engine(TEST_DB_URL, connect_args={"check_same_thread": False})
-        cls.TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=cls.engine)
-        Base.metadata.create_all(bind=cls.engine)
-
-        cls.db = cls.TestingSessionLocal()
-
-
-
-        cls.dUser = user.User()
-        cls.dUser.email = "dummy@email.com"
-        cls.dUser.username = "dummyusername"
-        cls.dUser.firstname = "dfirstname"
-        cls.dUser.lastname = "dlastname"
-        cls.dUser.password = utils.get_hashed_password("dpassword")
-
-        cls.db.add(cls.dUser)
-        cls.db.commit()
+        super().setUpClass()
+        
 
     @classmethod 
     def tearDownClass(cls):
-        cls.db.query(user.User).delete()
-        cls.db.commit()
-        cls.db.close()
-        Base.metadata.drop_all(bind=cls.engine)
-        cls.engine.dispose()
+        super().tearDownClass()
 
     def setUp(self):
         self.db = TestSessionLocal()
-        # create dummy user
 
 
     def tearDown(self):
@@ -75,13 +25,14 @@ class TestAuth(unittest.TestCase):
         self.db.close()
 
     def test_register_user(self):
-        response = client.post(
+        response = self.client.post(
             "/auth/register",
             json = {
                     "username": "testusername",
                     "email": "test@example.com",
                     "firstname": "testfirstname",
                     "lastname": "string",
+                    "phone_number": "123456789",
                     "password": "string"
             },
         )
@@ -96,7 +47,7 @@ class TestAuth(unittest.TestCase):
 
     def test_login_with_valid_credientials(self):
         '''Passes with correct credientials'''
-        response = client.post(
+        response = self.client.post(
             "/auth/login",
             data = {
                 "username": "dummy@email.com",
@@ -114,7 +65,7 @@ class TestAuth(unittest.TestCase):
 
     def test_login_with_invalid_credientials(self):
         '''Fails with invalid credentials'''
-        response = client.post(
+        response = self.client.post(
             "/auth/login",
             data = {
                 "username": "test@example.com",
@@ -134,7 +85,7 @@ class TestAuth(unittest.TestCase):
 
         header = {"Authorization": f"Bearer {self.__class__.token}"}
 
-        response = client.put(
+        response = self.client.put(
             "/auth/updateProfile",
             headers = header,
 
@@ -157,7 +108,7 @@ class TestAuth(unittest.TestCase):
 
     def test_fails_update_profile_without_authentication(self):
         '''fails test case without authentication'''
-        response = client.put(
+        response = self.client.put(
             "/auth/updateProfile",
             json = {
                 "firstname": "UpdatedFirstName",
