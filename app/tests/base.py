@@ -1,3 +1,4 @@
+from cgi import test
 from unittest import TestCase
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
@@ -40,7 +41,12 @@ def create_test_user():
     db.commit()
     db.close()
 
-
+def isUserExists()->bool:
+    db = TestSessionLocal()
+    testuser = db.query(user.User).filter(user.User.email == "dummy@email.com").first()
+    if testuser is None:
+        return False
+    return True
     
 
 class BaseTest(TestCase):
@@ -48,7 +54,9 @@ class BaseTest(TestCase):
     def setUpClass(cls) -> None:
         Base.metadata.create_all(bind=engine)
         cls.client = TestClient(app)
-        create_test_user()
+        if not isUserExists():
+
+            create_test_user()
 
     @classmethod
     def tearDownClass(cls) -> None:

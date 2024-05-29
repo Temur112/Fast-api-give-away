@@ -19,6 +19,7 @@ class User(Base):
     password = Column(String)
 
     is_banned = Column(Boolean, default=False)
+    products = relationship("Item", back_populates="owner")
 
 
     def __init__(self, email: str, username: str, firstname: str, lastname: str, phone_number: str | None, password:str):

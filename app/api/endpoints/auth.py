@@ -1,4 +1,3 @@
-from ctypes import util
 from datetime import timedelta
 from db.database import get_db
 from fastapi import APIRouter, Depends
