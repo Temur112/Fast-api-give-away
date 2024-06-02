@@ -18,3 +18,13 @@ def token_exceptions():
         headers = {"WWW-Authenticate": "Bearer"}
     )
     return token_exception_response
+
+def http_exception():
+    return HTTPException(status_code = 404, detail = "item not found")
+
+
+def custom_response(statuscode = 200, message = "Successful"):
+    return {
+        'status': statuscode,
+        'transaction': message
+    }

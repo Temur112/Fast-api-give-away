@@ -1,5 +1,4 @@
 from datetime import datetime, timedelta
-from math import log
 from typing import Optional
 from passlib.context import CryptContext
 from models.user import User
@@ -70,3 +69,11 @@ async def get_current_user(token:str = Depends(oauth2_bearer)):
         raise custom_exceptions.get_user_exception()
 
 
+def item_to_dict(item):
+    return {
+        "id": item.id,
+        "title": item.title,
+        "description": item.description,
+        "price": item.price,
+        "owner_id": item.owner_id
+    }

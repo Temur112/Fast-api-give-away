@@ -1,6 +1,6 @@
 from datetime import timedelta
 from db.database import get_db
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from schemas.user_schema import CreateUser, UpdateUserProfile
 from models.user import User
@@ -25,6 +25,11 @@ async def register_user(user:CreateUser, db: Session = Depends(get_db)):
         user.phone_number,
         utils.get_hashed_password(user.password)
     )
+
+    u = db.query(User).filter(User.email == user.email).first()
+    if  u is not None:
+        raise HTTPException(status_code=409, detail="User already exist")
+    
     newUser.email = user.email
     newUser.firstname = user.firstname
     newUser.lastname = user.lastname
@@ -36,7 +41,8 @@ async def register_user(user:CreateUser, db: Session = Depends(get_db)):
     db.add(newUser)
     db.commit()
     db.refresh(newUser)
-    
+    newUser.password = "empty"
+
     return newUser
 
 @router.get("/getAllUsers")

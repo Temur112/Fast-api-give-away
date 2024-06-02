@@ -1,4 +1,3 @@
-from models.user import User
 from db.database import Base
 from sqlalchemy import Boolean, String, Integer, Column, Float, ForeignKey
 from sqlalchemy.orm import relationship
