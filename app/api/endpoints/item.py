@@ -1,10 +1,10 @@
-from ast import List
 from db.database import get_db
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException, File, UploadFile
 from schemas.item_schema import CreateItem, Item
 from utils import utils, custom_exceptions
 from sqlalchemy.orm import Session
-from models.item import Item
+from models.item import Item, Image
+import shutil
 
 
 router = APIRouter(
@@ -100,3 +100,33 @@ async def delete_product_by_id(id: int, user: dict = Depends(utils.get_current_u
     db.commit()
     
     return custom_exceptions.custom_response(200, "Successfull")
+
+@router.post("/{item_id}/images/")
+async def upload_image_to_item(item_id:int, 
+                               file: UploadFile = File, 
+                               db: Session = Depends(get_db), 
+                               user: dict = Depends(utils.get_current_user)):
+    if user is None:
+        raise custom_exceptions.get_user_exception
+    
+    item = db.query(Item).\
+        filter(Item.id == item_id).\
+        filter(Item.owner_id == user.\
+        get("id")).first()
+    
+    if item is None:
+        raise custom_exceptions.http_exception
+    
+    file_path = f"images/{file.filename}"
+
+    with open(file_path, "wb") as buffer:
+        shutil.copyfileobj(file.file, buffer)
+
+    image = Image()
+    image.item_id = item_id
+    image.url = file_path
+
+    db.add(image)
+    db.commit()
+    db.refresh(image)
+    return image
